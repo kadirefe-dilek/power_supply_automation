@@ -2,49 +2,49 @@
 
 ## Overview
 
-This repository provides a Python-based automation framework for controlling
-a programmable power supply via a USB-to-RS232 serial interface.
+This repository provides a Python-based automation framework for controlling a
+programmable power supply via a USB-to-RS232 serial interface.
 
 The solution is designed to be:
 - Vendor-agnostic
-- Safe for laboratory and engineering use
-- Suitable for automated power control, measurements, and test scenarios
+- Safe for laboratory and engineering environments
+- Suitable for scripted power control and measurement workflows
 
-The focus is on **reliable operation**, **clear separation of concerns**, and
-**controlled power sequencing** rather than GUI or advanced CI features.
+The primary focus is **operational reliability and safety**, not graphical interfaces
+or extensive test frameworks.
 
 ---
 
 ## Scope
 
 This project supports:
-- Serial (RS-232) communication with programmable power supplies
-- Command-based control (e.g., set voltage/current, enable/disable output)
+- RS-232 serial communication with programmable power supplies
+- Command-based control (voltage, current, output enable/disable)
 - Voltage and current measurements
-- Scripted and repeatable power automation workflows
+- Repeatable automation workflows
 
 Out of scope:
-- GUI applications
-- SCPI theory documentation
-- Continuous Integration (CI) pipelines
-- Unit test prioritization (optional, non-blocking)
+- Graphical user interfaces (GUI)
+- SCPI theory or protocol standard documentation
+- Continuous Integration (CI/CD) pipelines
+- Mandatory unit test coverage
 
 ---
 
 ## Repository Structure
+
 .
 ├─ src/
-│ ├─ config.py # Serial configuration definitions
-│ ├─ enums.py # Command and protocol enumerations
-│ ├─ transport.py # Serial transport abstraction
-│ ├─ pipeline.py # Power supply command pipeline
-│ └─ main.py # Automation entry point
+│  ├─ config.py        Serial configuration definitions
+│  ├─ enums.py         Command and protocol enumerations
+│  ├─ transport.py    Serial transport abstraction
+│  ├─ pipeline.py     Power supply command pipeline
+│  └─ main.py         Automation entry point
 │
-├─ unit_test/ # Optional unit tests (not operationally critical)
+├─ unit_test/          Optional unit tests (non-blocking)
 │
-├─ README.md # Project overview (this file)
-└─ OPERATIONS.md # Hardware, setup, and usage guide
-
+├─ README.md           Project overview
+└─ OPERATIONS.md       Hardware setup and operational guide
 
 ---
 
@@ -56,10 +56,10 @@ Out of scope:
 - Programmable power supply with RS-232 support
 
 ### Software
-- Windows 10 / 11
+- Windows 10 or Windows 11
 - Python 3.12
 - Visual Studio Code (recommended)
-- Python virtual environment (`venv_powAuto`)
+- Python virtual environment (venv_powAuto)
 
 ---
 
@@ -67,36 +67,61 @@ Out of scope:
 
 1. Install Python 3.12
 2. Create and activate the virtual environment
-3. Install required packages
+3. Install required Python packages
 
 ```powershell
 pip install pyserial
+```
 
+Detailed setup and operational instructions are provided in **OPERATIONS.md**.
 
-Detailed setup and operational instructions are provided in OPERATIONS.md.
+---
 
-Usage (Quick Start)
+## Quick Start
+
+Activate the virtual environment and run the automation:
+
+```powershell
 python -m src.main COM4
+```
 
+Replace `COM4` with the serial port assigned by the operating system.
 
-Replace COM4 with the actual serial port assigned by the system.
+---
 
-Operational Safety Notice
+## Operational Safety Notice
 
-This automation controls physical hardware capable of delivering electrical power.
-Incorrect usage may result in equipment damage or safety hazards.
+This automation framework controls physical hardware capable of delivering
+electrical power.
 
-Always follow:
+Improper usage may result in:
+- Equipment damage
+- Unexpected power application
+- Safety hazards
 
-Output OFF before configuration
+Always follow these principles:
+- Configure voltage and current limits with output OFF
+- Enable output only after configuration
+- Verify output using measurement commands
 
-Current limiting before enabling output
+Refer to **OPERATIONS.md** for mandatory operational procedures.
 
-Verification via measurement commands
+---
 
-Refer to OPERATIONS.md for mandatory operational procedures.
+## Intended Use
 
-License and Usage
+This project is intended for:
+- Laboratory automation
+- Engineering validation and test setups
+- Controlled power sequencing and measurements
 
-This project is intended for internal engineering, laboratory, and test automation use.
-Adaptation to specific power supply models should follow the manufacturer’s documentation.
+Adaptation to specific power supply models must follow the manufacturer’s
+official documentation.
+
+---
+
+## Disclaimer
+
+This software is provided as-is for engineering and laboratory use.
+The user is responsible for validating correct operation with the
+target hardware configuration.
