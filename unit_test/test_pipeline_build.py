@@ -2,72 +2,82 @@
 
 import unittest
 
-from src.pipeline import SupplyPipeline
-from src.enums import SupplyCommand, ProtocolFlavor
+from src.enums import SupplyCommand
+from src.drivers.map_driver import MapBasedDriver, DriverConfigError
 
 
-class DummyTransport:
-    # build_command testinde transport kullanılmıyor ama pipeline init istiyor
-    def write_line(self, line: str) -> None:
-        pass
-
-
-class TestPipelineBuildCommand(unittest.TestCase):
+class TestMapBasedDriverBuildCommand(unittest.TestCase):
     def setUp(self) -> None:
-        self.pipeline = SupplyPipeline(transport=DummyTransport(), protocol=ProtocolFlavor.SCPI)
+        self.driver = MapBasedDriver(
+            driver_name="A",
+            command_map={
+                SupplyCommand.IDN: "*IDN?",
+                SupplyCommand.RESET: "*RST",
+                SupplyCommand.SYSTEM_REMOTE: "SYSTem:REMote",
+                SupplyCommand.SYSTEM_LOCAL: "SYSTem:LOCal",
+                SupplyCommand.SYSTEM_RWLOCK: "SYSTem:RWLock",
+                SupplyCommand.SET_RANGE_LOW: "VOLT:RANG P35V",
+                SupplyCommand.SET_RANGE_HIGH: "VOLT:RANG P60V",
+                SupplyCommand.OVP_SET: "VOLT:PROT {value}",
+                SupplyCommand.OVP_ENABLE: "VOLT:PROT:STAT ON",
+                SupplyCommand.OVP_DISABLE: "VOLT:PROT:STAT OFF",
+                SupplyCommand.OVP_CLEAR: "VOLT:PROT:CLE",
+                SupplyCommand.OPEN_OUTPUT: "OUTP ON",
+                SupplyCommand.CLOSE_OUTPUT: "OUTP OFF",
+                SupplyCommand.SET_VOLTAGE: "VOLT {value}",
+                SupplyCommand.SET_CURRENT: "CURR {value}",
+                SupplyCommand.MEASURE_VOLTAGE: "MEAS:VOLT?",
+                SupplyCommand.MEASURE_CURRENT: "MEAS:CURR?",
+            },
+            expect_response_set={
+                SupplyCommand.IDN,
+                SupplyCommand.MEASURE_VOLTAGE,
+                SupplyCommand.MEASURE_CURRENT,
+            },
+            value_decimals=3,
+        )
 
     def test_idn(self):
-        self.assertEqual(self.pipeline.build_command(SupplyCommand.IDN), "*IDN?")
+        self.assertEqual(self.driver.build_command(SupplyCommand.IDN), "*IDN?")
 
-    def test_output_on_off_no_channel(self):
-        self.assertEqual(self.pipeline.build_command(SupplyCommand.OPEN_OUTPUT), "OUTP ON")
-        self.assertEqual(self.pipeline.build_command(SupplyCommand.CLOSE_OUTPUT), "OUTP OFF")
+    def test_reset(self):
+        self.assertEqual(self.driver.build_command(SupplyCommand.RESET), "*RST")
 
-    def test_measure_voltage_current_no_channel(self):
-        self.assertEqual(self.pipeline.build_command(SupplyCommand.MEASURE_VOLTAGE), "MEAS:VOLT?")
-        self.assertEqual(self.pipeline.build_command(SupplyCommand.MEASURE_CURRENT), "MEAS:CURR?")
+    def test_remote_local_lock(self):
+        self.assertEqual(self.driver.build_command(SupplyCommand.SYSTEM_REMOTE), "SYSTem:REMote")
+        self.assertEqual(self.driver.build_command(SupplyCommand.SYSTEM_LOCAL), "SYSTem:LOCal")
+        self.assertEqual(self.driver.build_command(SupplyCommand.SYSTEM_RWLOCK), "SYSTem:RWLock")
 
-    def test_set_voltage_requires_value(self):
-        with self.assertRaises(ValueError):
-            self.pipeline.build_command(SupplyCommand.SET_VOLTAGE)
+    def test_range_select(self):
+        self.assertEqual(self.driver.build_command(SupplyCommand.SET_RANGE_LOW), "VOLT:RANG P35V")
+        self.assertEqual(self.driver.build_command(SupplyCommand.SET_RANGE_HIGH), "VOLT:RANG P60V")
 
-    def test_set_current_requires_value(self):
-        with self.assertRaises(ValueError):
-            self.pipeline.build_command(SupplyCommand.SET_CURRENT)
+    def test_ovp_set_requires_value(self):
+        with self.assertRaises(DriverConfigError):
+            self.driver.build_command(SupplyCommand.OVP_SET)
 
-    def test_set_voltage_format(self):
-        cmd = self.pipeline.build_command(SupplyCommand.SET_VOLTAGE, value=5.0)
-        self.assertEqual(cmd, "VOLT 5.000")
+    def test_ovp_set_formats_value(self):
+        self.assertEqual(self.driver.build_command(SupplyCommand.OVP_SET, value=6.0), "VOLT:PROT 6.000")
 
-    def test_set_current_format(self):
-        cmd = self.pipeline.build_command(SupplyCommand.SET_CURRENT, value=1.23456)
-        self.assertEqual(cmd, "CURR 1.235")  # 3 decimal rounding
+    def test_ovp_enable_disable_clear(self):
+        self.assertEqual(self.driver.build_command(SupplyCommand.OVP_ENABLE), "VOLT:PROT:STAT ON")
+        self.assertEqual(self.driver.build_command(SupplyCommand.OVP_DISABLE), "VOLT:PROT:STAT OFF")
+        self.assertEqual(self.driver.build_command(SupplyCommand.OVP_CLEAR), "VOLT:PROT:CLE")
 
-    def test_with_channel_variants(self):
-        self.assertEqual(
-            self.pipeline.build_command(SupplyCommand.MEASURE_VOLTAGE, channel=1),
-            "MEAS:VOLT? (@1)"
-        )
-        self.assertEqual(
-            self.pipeline.build_command(SupplyCommand.MEASURE_CURRENT, channel=2),
-            "MEAS:CURR? (@2)"
-        )
-        self.assertEqual(
-            self.pipeline.build_command(SupplyCommand.OPEN_OUTPUT, channel=1),
-            "OUTP1 ON"
-        )
-        self.assertEqual(
-            self.pipeline.build_command(SupplyCommand.CLOSE_OUTPUT, channel=1),
-            "OUTP1 OFF"
-        )
-        self.assertEqual(
-            self.pipeline.build_command(SupplyCommand.SET_VOLTAGE, value=12.0, channel=2),
-            "VOLT2 12.000"
-        )
-        self.assertEqual(
-            self.pipeline.build_command(SupplyCommand.SET_CURRENT, value=0.5, channel=2),
-            "CURR2 0.500"
-        )
+    def test_set_voltage_current_format(self):
+        self.assertEqual(self.driver.build_command(SupplyCommand.SET_VOLTAGE, value=5.0), "VOLT 5.000")
+        self.assertEqual(self.driver.build_command(SupplyCommand.SET_CURRENT, value=0.2), "CURR 0.200")
+
+    def test_measure(self):
+        self.assertEqual(self.driver.build_command(SupplyCommand.MEASURE_VOLTAGE), "MEAS:VOLT?")
+        self.assertEqual(self.driver.build_command(SupplyCommand.MEASURE_CURRENT), "MEAS:CURR?")
+
+    def test_expects_response(self):
+        self.assertTrue(self.driver.expects_response(SupplyCommand.IDN))
+        self.assertTrue(self.driver.expects_response(SupplyCommand.MEASURE_VOLTAGE))
+        self.assertTrue(self.driver.expects_response(SupplyCommand.MEASURE_CURRENT))
+        self.assertFalse(self.driver.expects_response(SupplyCommand.OPEN_OUTPUT))
+        self.assertFalse(self.driver.expects_response(SupplyCommand.RESET))
 
 
 if __name__ == "__main__":

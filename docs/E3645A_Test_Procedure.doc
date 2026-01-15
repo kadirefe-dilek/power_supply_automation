@@ -1,0 +1,171 @@
+{\rtf1\ansi\deff0
+{\fonttbl{\f0 Calibri;}}
+\fs24
+\b E3645A RS-232 Automation Test Procedure\b0\par
+\par
+\b 1. Objective\b0\par
+Validate end-to-end control of a Keysight/Agilent E3645A programmable DC power supply via RS-232 using the automation framework.\par
+\par
+\b 2. Preconditions\b0\par
+\pard\sa200\li360
+- Power supply model: E3645A\par
+- USB-to-RS232 converter installed and visible as COMx in Windows Device Manager\par
+- Correct RS-232 wiring (null-modem/crossover as required by the instrument)\par
+- Power supply configured for RS-232 operation on the front panel (baud/parity/data bits per site standard; factory is 9600, None/8)\par
+- Output terminals connected to a safe load or left open for no-load validation\par
+\pard\par
+\b 3. Tools and Software\b0\par
+\pard\sa200\li360
+- Windows 10/11 PC with Visual Studio Code\par
+- Python 3.12 virtual environment: venv_powAuto\par
+- Python package: pyserial\par
+- Repository configuration: power_supplies.json (default profile A = E3645A)\par
+\pard\par
+\b 4. Safety Constraints\b0\par
+\pard\sa200\li360
+- Do not enable output before setting voltage and current limits.\par
+- Start with low energy settings (e.g., 5 V, 0.2 A) for first validation.\par
+- Keep OVP enabled during initial runs.\par
+\pard\par
+\b 5. Test Procedure (Steps and Expected Results)\b0\par
+\par
+\b Step 1: Activate Python environment\b0\par
+\pard\sa200\li360
+Command (PowerShell):\par
+\pard\sa0\li720
+.\\venv_powAuto\\Scripts\\Activate.ps1\par
+\pard\sa200\li360
+Expected result:\par
+\pard\sa0\li720
+python --version returns Python 3.12.x\par
+\pard\par
+\b Step 2: Confirm configuration profile\b0\par
+\pard\sa200\li360
+Verify that power_supplies.json exists at repository root and default is set to A.\par
+Expected result:\par
+- Default profile is A and description references E3645A.\par
+\pard\par
+\b Step 3: Establish RS-232 remote mode\b0\par
+\pard\sa200\li360
+Issue:\par
+\pard\sa0\li720
+SYSTem:REMote\par
+\pard\sa200\li360
+Expected result:\par
+- Power supply enters remote mode (front panel indicates remote; local keys disabled except as defined by instrument).\par
+\pard\par
+\b Step 4: Identify instrument\b0\par
+\pard\sa200\li360
+Issue:\par
+\pard\sa0\li720
+*IDN?\par
+\pard\sa200\li360
+Expected result:\par
+- Non-empty response containing vendor/model information.\par
+\pard\par
+\b Step 5: Reset to a known baseline\b0\par
+\pard\sa200\li360
+Issue:\par
+\pard\sa0\li720
+*RST\par
+\pard\sa200\li360
+Expected result:\par
+- Instrument returns to power-on/reset baseline. Output is expected to be OFF.\par
+\pard\par
+\b Step 6: Select output range\b0\par
+\pard\sa200\li360
+Issue (Low range):\par
+\pard\sa0\li720
+VOLT:RANG P35V\par
+\pard\sa200\li360
+Expected result:\par
+- Instrument range set to 35 V / 2.2 A range.\par
+\par
+\pard\sa200\li360
+Issue (High range):\par
+\pard\sa0\li720
+VOLT:RANG P60V\par
+\pard\sa200\li360
+Expected result:\par
+- Instrument range set to 60 V / 1.3 A range.\par
+\pard\par
+\b Step 7: Configure OVP\b0\par
+\pard\sa200\li360
+Issue:\par
+\pard\sa0\li720
+VOLT:PROT 6.000\par
+VOLT:PROT:STAT ON\par
+\pard\sa200\li360
+Expected result:\par
+- OVP is enabled at 6.0 V trip level.\par
+\pard\par
+\b Step 8: Configure output limits with output OFF\b0\par
+\pard\sa200\li360
+Issue:\par
+\pard\sa0\li720
+OUTP OFF\par
+VOLT 5.000\par
+CURR 0.200\par
+\pard\sa200\li360
+Expected result:\par
+- Output remains OFF.\par
+- Voltage limit set to 5.0 V.\par
+- Current limit set to 0.2 A.\par
+\pard\par
+\b Step 9: Enable output and validate measurements\b0\par
+\pard\sa200\li360
+Issue:\par
+\pard\sa0\li720
+OUTP ON\par
+MEAS:VOLT?\par
+MEAS:CURR?\par
+\pard\sa200\li360
+Expected result:\par
+- MEAS:VOLT? returns approximately 5.0 V under no-load (or load-dependent with a connected load).\par
+- MEAS:CURR? returns approximately 0 A under no-load; with a load, current reflects load draw but should not exceed 0.2 A limit.\par
+\pard\par
+\b Step 10: OVP functional check (optional, controlled)\b0\par
+\pard\sa200\li360
+Precondition:\par
+- Ensure a safe test load and supervision.\par
+Action:\par
+- Set VOLT to a value above OVP (e.g., 6.5 V) with OVP still enabled.\par
+Expected result:\par
+- OVP trips and output is driven to a safe state.\par
+Recovery:\par
+\pard\sa0\li720
+OUTP OFF\par
+VOLT:PROT:CLE\par
+VOLT 5.000\par
+OUTP ON\par
+\pard\sa200\li360
+Expected result:\par
+- Output restores to 5.0 V after clearing OVP.\par
+\pard\par
+\b Step 11: Shutdown sequence\b0\par
+\pard\sa200\li360
+Issue:\par
+\pard\sa0\li720
+OUTP OFF\par
+SYSTem:LOCal\par
+\pard\sa200\li360
+Expected result:\par
+- Output OFF.\par
+- Instrument returns to local (front panel controls restored).\par
+\pard\par
+\b 6. Acceptance Criteria\b0\par
+\pard\sa200\li360
+- Communication established; *IDN? response received.\par
+- Remote mode entered successfully for RS-232 operation.\par
+- Range selection commands execute without errors.\par
+- OVP set and enabled; optional trip test behaves as expected.\par
+- Voltage/current set commands take effect and are confirmed via MEAS queries.\par
+- Shutdown completes with output OFF and local mode restored.\par
+\pard\par
+\b 7. Execution Commands (Operator Cheatsheet)\b0\par
+\pard\sa200\li360
+Run automation (example):\par
+\pard\sa0\li720
+python -m src.main COM4 --supply A\par
+\pard\par
+}

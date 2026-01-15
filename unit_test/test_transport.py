@@ -46,12 +46,10 @@ class TestSerialTransport(unittest.TestCase):
         tr._ser = MagicMock()
         tr._ser.is_open = True
 
-        # readline raw bytes döndürür
         tr._ser.readline.return_value = b"OK\n"
 
         resp = tr.send_and_receive("PING")
 
-        # yazılan payload: "PING\n" encode
         tr._ser.write.assert_called_once()
         self.assertEqual(resp, "OK")
 
