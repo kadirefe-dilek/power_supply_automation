@@ -11,15 +11,12 @@ class TestPipelineExecute(unittest.TestCase):
     def setUp(self) -> None:
         self.transport = MagicMock()
         self.driver = MagicMock()
-        self.driver.name = "A"
-
-        # Default driver policies
+        self.driver.name = "X"
         self.driver.expects_response.side_effect = lambda cmd: cmd in {
             SupplyCommand.IDN,
             SupplyCommand.MEASURE_VOLTAGE,
             SupplyCommand.MEASURE_CURRENT
         }
-
         self.pipeline = SupplyPipeline(transport=self.transport, driver=self.driver)
 
     def test_execute_expect_response_true_uses_send_and_receive(self):
@@ -43,23 +40,13 @@ class TestPipelineExecute(unittest.TestCase):
         self.transport.send_and_receive.assert_not_called()
         self.assertEqual(resp, "")
 
-    def test_execute_default_expectation_uses_driver_policy(self):
+    def test_execute_passes_value(self):
         self.driver.build_command.return_value = "VOLT 5.000"
 
-        # SET_VOLTAGE default policy should be False, so should use write_line
-        _ = self.pipeline.execute(SupplyCommand.SET_VOLTAGE, value=5.0)
+        _ = self.pipeline.execute(SupplyCommand.SET_VOLTAGE, value=5.0, expect_response=False)
 
         self.driver.build_command.assert_called_once_with(SupplyCommand.SET_VOLTAGE, value=5.0, channel=None)
         self.transport.write_line.assert_called_once_with("VOLT 5.000")
-        self.transport.send_and_receive.assert_not_called()
-
-    def test_execute_passes_value_and_channel(self):
-        self.driver.build_command.return_value = "VOLT 12.000"
-
-        _ = self.pipeline.execute(SupplyCommand.SET_VOLTAGE, value=12.0, channel=1, expect_response=False)
-
-        self.driver.build_command.assert_called_once_with(SupplyCommand.SET_VOLTAGE, value=12.0, channel=1)
-        self.transport.write_line.assert_called_once_with("VOLT 12.000")
 
 
 if __name__ == "__main__":

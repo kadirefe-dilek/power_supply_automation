@@ -9,6 +9,6 @@ class SerialConfig:
     bytesize: int = 8
     parity: str = "N"     # 'N', 'E', 'O', 'M', 'S'
     stopbits: int = 1
-    timeout_s: float = 1.0
+    timeout_s: float = 2.0
     write_timeout_s: float = 1.0
     newline: str = "\n"   # bazı cihazlar "\r\n" ister

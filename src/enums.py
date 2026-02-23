@@ -4,7 +4,7 @@ from enum import Enum, auto
 
 
 class SupplyCommand(Enum):
-    # Basic control
+    # Basic control (common)
     OPEN_OUTPUT = auto()
     CLOSE_OUTPUT = auto()
     SET_VOLTAGE = auto()
@@ -12,21 +12,30 @@ class SupplyCommand(Enum):
     MEASURE_VOLTAGE = auto()
     MEASURE_CURRENT = auto()
     IDN = auto()
-
-    # E364xA / SCPI extended ops (requested)
     RESET = auto()
 
+    # Remote/local controls (common-ish)
     SYSTEM_REMOTE = auto()
     SYSTEM_LOCAL = auto()
     SYSTEM_RWLOCK = auto()
 
+    # Range controls (E3645A-style)
     SET_RANGE_LOW = auto()
     SET_RANGE_HIGH = auto()
 
+    # OVP controls (E3645A-style / SCPI)
     OVP_SET = auto()
     OVP_ENABLE = auto()
     OVP_DISABLE = auto()
     OVP_CLEAR = auto()
+
+    # Multi-rail selection (E3631A-style)
+    SELECT_P6V = auto()
+    SELECT_P25V = auto()
+    SELECT_N25V = auto()
+
+    # Convenience command (some supplies support APPLY)
+    APPLY = auto()
 
     # Test hook
     ECHO_TEST = auto()

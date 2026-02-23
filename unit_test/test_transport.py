@@ -48,9 +48,11 @@ class TestSerialTransport(unittest.TestCase):
 
         tr._ser.readline.return_value = b"OK\n"
 
-        resp = tr.send_and_receive("PING")
+        resp = tr.send_and_receive("PING", settle_s=0)
 
+        tr._ser.reset_input_buffer.assert_called_once()
         tr._ser.write.assert_called_once()
+        tr._ser.flush.assert_called_once()
         self.assertEqual(resp, "OK")
 
 
